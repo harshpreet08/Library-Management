@@ -1,0 +1,15 @@
+# Ignore JetBrains/CLion IDE settings
+.idea/
+
+# Ignore CMake build outputs
+cmake-build-debug/
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+# Ignore compiled binaries
+*.o
+*.out
+*.obj
+*.exe
