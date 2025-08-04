@@ -1,23 +1,34 @@
 #pragma once
-#include "../persistence/BookRepository.h"
+
+#include "../persistence/AssetRepository.h"
 #include "../persistence/UserRepository.h"
 #include <memory>
 #include <string>
+#include <optional>
+#include <ctime>
+
+struct LoanInfo {
+    std::string userId;
+    time_t issueDate;
+};
 
 class LoanService {
 public:
-    LoanService(std::shared_ptr<BookRepository> repo, std::shared_ptr<UserRepository> userRepo);
+    LoanService(std::shared_ptr<AssetRepository> assetRepo, std::shared_ptr<UserRepository> userRepo);
 
-    bool issueBook(const std::string& bookId, const std::string& userId);
-    bool returnBook(const std::string& bookId);
+    bool issueAsset(const std::string& assetId, const std::string& userId);
+    bool returnAsset(const std::string& assetId);
     void listAll();
     void showOverdues(); // borrowed > 14 days
 
+    // public accessor for outside consumers
+    std::optional<LoanInfo> loanInfo(const std::string& assetId);
+
 private:
-    std::shared_ptr<BookRepository> _repo;
+    std::shared_ptr<AssetRepository> _assetRepo;
     std::shared_ptr<UserRepository> _userRepo;
 
-    time_t getIssueDate(const std::string& bookId);
-    void setLoan(const std::string& bookId, const std::string& userId);
-    void clearLoan(const std::string& bookId);
+    std::optional<LoanInfo> getLoanInfo(const std::string& assetId);
+    void setLoan(const std::string& assetId, const std::string& userId);
+    void clearLoan(const std::string& assetId);
 };

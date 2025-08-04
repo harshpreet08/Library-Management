@@ -1,15 +1,16 @@
 #pragma once
-#include "../models/Book.h"
+#include "../models/Asset.h"
 #include "DatabaseManager.h"
 #include <memory>
 #include <vector>
+#include <optional>
 
-class BookRepository {
+class AssetRepository {
 public:
-    explicit BookRepository(std::shared_ptr<DatabaseManager> db);
-    void add(const Book& book);
-    std::unique_ptr<Book> find(const std::string& id);
-    std::vector<Book> getAll();
+    explicit AssetRepository(std::shared_ptr<DatabaseManager> db);
+    void add(const Asset& asset);
+    std::optional<Asset> find(const std::string& id);
+    std::vector<Asset> getAll();
     void setIssued(const std::string& id, bool issued);
     bool isIssued(const std::string& id);
 

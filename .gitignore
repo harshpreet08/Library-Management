@@ -1,15 +1,29 @@
-# Ignore JetBrains/CLion IDE settings
-.idea/
-
-# Ignore CMake build outputs
+# Build artifacts
+/build/
+/src/cmake-build-debug/
 cmake-build-debug/
 CMakeFiles/
 CMakeCache.txt
 Makefile
 cmake_install.cmake
-
-# Ignore compiled binaries
 *.o
+*.a
 *.out
 *.obj
 *.exe
+app
+
+# SQLite DB (persisted state)
+*.db
+library.db
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# macOS system files
+.DS_Store
+
+# Logs and context
+context.txt

@@ -9,14 +9,24 @@ find_package(SQLite3 REQUIRED)
 
 add_library(core
         models/ILendable.h
-        models/Book.h models/Book.cpp
+
+        models/Book.h models/Book.cpp            # can be deprecated later
+        models/Asset.h models/Asset.cpp          # unified asset model
         models/User.h models/User.cpp
+
         persistence/DatabaseManager.h persistence/DatabaseManager.cpp
-        persistence/BookRepository.h persistence/BookRepository.cpp
+        persistence/AssetRepository.h persistence/AssetRepository.cpp
         persistence/UserRepository.h persistence/UserRepository.cpp
+
         services/LoanService.h services/LoanService.cpp
         services/NotificationService.h services/NotificationService.cpp
+
         ui/CLI.h ui/CLI.cpp
+        services/NotificationStrategy.h
+        services/EmailNotifier.cpp
+        services/EmailNotifier.h
+        ui/Context.cpp
+        ui/Context.h
 )
 
 target_include_directories(core PUBLIC
@@ -28,5 +38,10 @@ target_link_libraries(core PUBLIC
         ${SQLite3_LIBRARIES}
 )
 
-add_executable(app main.cpp)
+add_executable(app main.cpp
+        services/NotificationStrategy.h
+        services/EmailNotifier.cpp
+        services/EmailNotifier.h
+        ui/Context.cpp
+        ui/Context.h)
 target_link_libraries(app PRIVATE core)

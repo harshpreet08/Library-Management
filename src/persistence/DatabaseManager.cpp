@@ -23,17 +23,18 @@ void DatabaseManager::initializeSchema() {
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS books (
+        CREATE TABLE IF NOT EXISTS assets (
             id TEXT PRIMARY KEY,
-            title TEXT NOT NULL,
-            author TEXT NOT NULL,
+            type TEXT NOT NULL,          -- "book" or "laptop" etc.
+            title TEXT,                 -- for book: title; for laptop: model/name
+            author_or_owner TEXT,       -- for book: author; for laptop: owner/info
             is_issued INTEGER NOT NULL DEFAULT 0
         );
         CREATE TABLE IF NOT EXISTS loans (
-            book_id TEXT PRIMARY KEY,
+            asset_id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
             issue_date INTEGER,
-            FOREIGN KEY(book_id) REFERENCES books(id),
+            FOREIGN KEY(asset_id) REFERENCES assets(id),
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
     )";
