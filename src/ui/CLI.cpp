@@ -216,12 +216,6 @@ void CLI::run() {
 }
 
 // ---------------- Staff Menu ----------------
-// (unchanged: your existing runStaffMenu implementation)
-
-// ---------------- User Menu ----------------
-// (unchanged: your existing runUserMenu implementation)
-
-// ---------------- Staff Menu ----------------
 
 void CLI::runStaffMenu(const User& u) {
     std::cout << "\n[Staff Menu] Welcome, " << u.name() << "!\n";

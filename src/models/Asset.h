@@ -17,8 +17,11 @@ inline std::string assetTypeToString(AssetType t) {
 }
 
 inline AssetType stringToAssetType(const std::string& s) {
-    if (s == "book") return AssetType::Book;
-    if (s == "laptop") return AssetType::Laptop;
+    if (s == "book")
+        return AssetType::Book;
+    if (s == "laptop")
+        return AssetType::Laptop;
+
     return AssetType::Unknown;
 }
 
