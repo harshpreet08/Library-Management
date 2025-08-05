@@ -1,4 +1,3 @@
-
 # Library Management CLI (C++)
 
 A modern, user-friendly command-line tool to manage lendable assets (such as books and laptops), track users, issue and return items, and detect overdue loans. It’s built with clean architecture, uses SQLite for persistent storage, and applies SOLID principles and proven design patterns to ensure maintainability and scalability.
@@ -26,6 +25,7 @@ src/
 ├── models/             # Domain models: Asset, Book, Laptop, User
 ├── persistence/        # SQLite integration + repository layer
 ├── services/           # Business logic (LoanService, NotificationService)
+└── tests.cpp           # Contains all unit tests for the application
 ├── ui/                 # CLI, Context handler, Help menu
 ├── util/               # Logger and shared utilities (incl. password hashing)
 └── main.cpp            # Entry point
@@ -162,6 +162,58 @@ $ ./app
 [6] Overdues → Simulate and display alerts
 [4] Return Book → prompts confirmation
 ```
+
+---
+
+## Tests
+
+This project uses **GoogleTest** for unit testing.
+
+### Current Tests
+
+| Test File                 | Description                                |
+|--------------------------|--------------------------------------------|
+| `SecurityTests.cpp`      | Tests password hashing and verification using libsodium |
+| `UserRepositoryTests.cpp`| Tests adding and retrieving users from SQLite |
+| `AssetRepositoryTests.cpp`| Tests adding and retrieving assets from SQLite |
+| `LoanServiceTests.cpp`   | Tests issuing and returning assets, simulating overdue loans |
+
+All tests are run using an in-memory SQLite database (`:memory:`), ensuring they are isolated and non-persistent.
+
+### Running Tests
+
+To build and run tests:
+
+```bash
+cmake --build . --target tests
+ctest --output-on-failure
+```
+
+You’ll see output like:
+
+```
+100% tests passed, x tests failed out of n
+```
+
+### Test Structure
+
+All test files are located in:
+
+```
+src/tests/
+├── AssetRepositoryTests.cpp
+├── LoanServiceTests.cpp
+├── SecurityTests.cpp
+└── UserRepositoryTests.cpp
+```
+
+New test files are auto-detected via this pattern in `CMakeLists.txt`:
+
+```cmake
+file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/*Tests.cpp")
+```
+
+To add new tests, simply drop a `*Tests.cpp` file in `src/tests/`.
 
 ---
 
