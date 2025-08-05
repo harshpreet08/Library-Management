@@ -1,3 +1,4 @@
+
 # Library Management CLI (C++)
 
 A modern, user-friendly command-line tool to manage lendable assets (such as books and laptops), track users, issue and return items, and detect overdue loans. It’s built with clean architecture, uses SQLite for persistent storage, and applies SOLID principles and proven design patterns to ensure maintainability and scalability.
@@ -13,6 +14,8 @@ This project started as a simple in-memory book tracker and gradually evolved in
 - Handling workflows like issuing, returning, and tracking overdue items
 - Providing a clean and contextual command-line interface
 - Writing modular, testable, and well-structured C++ code
+- Introducing login/registration flows with secure password hashing using libsodium
+- Managing roles (User and Staff) with appropriate menu access and permissions
 
 ---
 
@@ -24,14 +27,14 @@ src/
 ├── persistence/        # SQLite integration + repository layer
 ├── services/           # Business logic (LoanService, NotificationService)
 ├── ui/                 # CLI, Context handler, Help menu
-├── util/               # Logger and shared utilities
+├── util/               # Logger and shared utilities (incl. password hashing)
 └── main.cpp            # Entry point
 
 root/
 ├── context.txt         # Stores last-used asset/user IDs
 ├── library.db          # SQLite database file
 ├── CMakeLists.txt      # CMake build file
-└── README.md           # You’re reading it!
+└── README.md           
 ```
 
 ---
@@ -59,8 +62,10 @@ root/
 ## Features
 
 - Persistent storage using SQLite (schema auto-created)
+- Secure password hashing with libsodium
 - Support for multiple asset types (books, laptops, etc.)
-- User management: add, search, and list users
+- Role-based access control (Staff vs. Users)
+- User management: register, login, search, and list users
 - Issue and return functionality with confirmations
 - Overdue detection with simulated notifications
 - Helpful command-line interface with shortcuts and context recall
@@ -74,18 +79,21 @@ root/
 
 - C++17 compatible compiler
 - CMake version 3.25 or higher
-- SQLite3 installed
+- SQLite3
+- libsodium
+- pkg-config (for locating libsodium)
 
 ### Build Instructions
 
 ```bash
+brew install sqlite3 libsodium pkg-config
 mkdir -p build
 cd build
 cmake ../src
 cmake --build . --target app
 ```
 
-Or, simply open the project in CLion and build using the GUI.
+Or, open the project in CLion and build using the GUI.
 
 ### Run
 
@@ -116,6 +124,16 @@ a / u / i / r / l / o / sa / su / lu / q
 
 ---
 
+## Login & Registration
+
+Upon first run, the app prompts for staff account creation. Subsequent users can register themselves with a password.
+
+Passwords are hashed using `libsodium` and safely stored in the database.
+
+To simulate login failures or bad passwords, try registering with one password and logging in with another.
+
+---
+
 ## Overdue Notifications
 
 Overdue checks are performed automatically when the application starts and can also be triggered manually using option [6].
@@ -137,10 +155,18 @@ Then restart the CLI.
 ```
 $ ./app
 
-[1] Add Book with ID: b1
-[2] Add User with ID: u1
-[3] Issue Book b1 to User u1
-[5] List Assets → b1 now shows as "Issued"
-[4] Return b1 → shows confirmation prompt
-[6] Overdues → shows a clean message if none exist
+[1] Register new user
+[2] Add Book
+[3] Issue Book to User
+[5] List Assets → shows status "Issued"
+[6] Overdues → Simulate and display alerts
+[4] Return Book → prompts confirmation
 ```
+
+---
+
+## Future Improvements
+
+- Email or terminal notifications via cronjob
+- Fine-grained permissions (e.g., read-only users)
+- Admin dashboard GUI (Qt-based)
