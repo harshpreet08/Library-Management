@@ -1,11 +1,10 @@
 #pragma once
-
 #include <sqlite3.h>
 #include <string>
 
 class DatabaseManager {
 public:
-    explicit DatabaseManager(const std::string& db_file);
+    explicit DatabaseManager(const std::string& dbPath);
     ~DatabaseManager();
 
     sqlite3* get();

@@ -1,3 +1,4 @@
+# src/CMakeLists.txt
 cmake_minimum_required(VERSION 3.25)
 project(LibraryManagementCore LANGUAGES CXX)
 
@@ -7,41 +8,32 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SQLite3 REQUIRED)
 
-add_library(core
-        models/ILendable.h
+# — locate libsodium via pkg-config —
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SODIUM REQUIRED IMPORTED_TARGET libsodium)
 
-        models/Book.h models/Book.cpp            # can be deprecated later
-        models/Asset.h models/Asset.cpp          # unified asset model
-        models/User.h models/User.cpp
+add_library(core
+        util/Security.h     util/Security.cpp
+
+        models/User.h       models/User.cpp
+        models/Asset.h      models/Asset.cpp
 
         persistence/DatabaseManager.h persistence/DatabaseManager.cpp
-        persistence/AssetRepository.h persistence/AssetRepository.cpp
-        persistence/UserRepository.h persistence/UserRepository.cpp
+        persistence/UserRepository.h   persistence/UserRepository.cpp
+        persistence/AssetRepository.h  persistence/AssetRepository.cpp
 
-        services/LoanService.h services/LoanService.cpp
+        services/LoanService.h        services/LoanService.cpp
         services/NotificationService.h services/NotificationService.cpp
+        services/EmailNotifier.h      services/EmailNotifier.cpp
 
-        ui/CLI.h ui/CLI.cpp
-        services/NotificationStrategy.h
-        services/EmailNotifier.cpp
-        services/EmailNotifier.h
-        ui/Context.cpp
-        ui/Context.h
-)
-
-target_include_directories(core PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${SQLite3_INCLUDE_DIRS}
+        ui/CLI.h      ui/CLI.cpp
+        ui/Context.h  ui/Context.cpp
 )
 
 target_link_libraries(core PUBLIC
         ${SQLite3_LIBRARIES}
+        PkgConfig::SODIUM
 )
 
-add_executable(app main.cpp
-        services/NotificationStrategy.h
-        services/EmailNotifier.cpp
-        services/EmailNotifier.h
-        ui/Context.cpp
-        ui/Context.h)
+add_executable(app main.cpp)
 target_link_libraries(app PRIVATE core)
