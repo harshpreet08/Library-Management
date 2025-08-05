@@ -1,4 +1,3 @@
-// src/ui/CLI.cpp
 #include "CLI.h"
 #include "../persistence/DatabaseManager.h"
 #include "../persistence/AssetRepository.h"
@@ -19,42 +18,53 @@
 #include <algorithm>
 #include <vector>
 
-// Globals
+// Global variables for repositories and services
 static std::shared_ptr<AssetRepository>     assetRepoPtr;
 static std::shared_ptr<UserRepository>      userRepoPtr;
 static std::unique_ptr<LoanService>         loanServicePtr;
 static std::unique_ptr<NotificationService> notifierPtr;
 static Context                              context;
 
-// Helpers for pretty‐printing
+// Helper methods for pretty-printing
 static void printAssetHeader() {
     std::cout << "ID    | Type   | Title                  | Author/Owner         | Status    | Borrowed Info\n";
     std::cout << "---------------------------------------------------------------------------------------------\n";
 }
-
 static void printAssetRow(const std::string& id,
                           const std::string& type,
                           const std::string& title,
                           const std::string& authOwner,
                           const std::string& status,
-                          const std::string& extra) {
+                          const std::string& extra)
+{
     auto pad = [&](const std::string& s, size_t w) {
         return s.size() >= w ? s.substr(0, w) : s + std::string(w - s.size(), ' ');
     };
     std::cout
-        << pad(id,5)         << " | "
-        << pad(type,6)       << " | "
-        << pad(title,22)     << " | "
+        << pad(id,5) << " | "
+        << pad(type,6) << " | "
+        << pad(title,22) << " | "
         << pad(authOwner,20) << " | "
-        << pad(status,9)     << " | "
-        << extra             << "\n";
+        << pad(status,9) << " | "
+        << extra << "\n";
 }
 
-// Normalize user input to lowercase
-static std::string normalizeCmd(const std::string& in) {
+// Convert to lowercase
+static std::string normalize(const std::string& in) {
     std::string s = in;
     std::transform(s.begin(), s.end(), s.begin(), ::tolower);
     return s;
+}
+
+// Read and trim one line from stdin
+static std::string readLine() {
+    std::string line;
+    std::getline(std::cin, line);
+    const char* ws = " \t\r\n";
+    auto b = line.find_first_not_of(ws);
+    if (b == std::string::npos) return "";
+    auto e = line.find_last_not_of(ws);
+    return line.substr(b, e - b + 1);
 }
 
 void CLI::printHelp() {
@@ -68,7 +78,7 @@ void CLI::printHelp() {
               << "  7 / sa    : Search Asset by ID\n"
               << "  8 / su    : Search User by ID\n"
               << "  9 / lu    : List All Users\n"
-              << "  h / help  : Show this help\n"
+              << "  h / help  : Show help\n"
               << "  q / exit  : Quit\n";
 }
 
@@ -91,7 +101,7 @@ void CLI::run() {
     strat.push_back(std::make_shared<EmailNotifier>("noreply@library.local"));
     notifierPtr = std::make_unique<NotificationService>(assetRepoPtr, userRepoPtr, strat);
 
-    // Bootstrap first staff user
+    // Create initial staff if no users exist
     if (userRepoPtr->getAll().empty()) {
         std::cout << "No users found. Create initial staff account.\n";
         std::string id, name, pwd;
@@ -100,63 +110,116 @@ void CLI::run() {
         std::cout << "Name: "; std::getline(std::cin, name);
         std::cout << "Password: "; std::cin >> pwd;
         auto hash = hashPassword(pwd);
-        User u(id, name, Role::Staff, hash);
-        userRepoPtr->add(u);
-        std::cout << "✅ Staff user \"" << name << "\" created.\n\n";
+        userRepoPtr->add(User{id, name, Role::Staff, hash});
+        std::cout << "✅ Staff \"" << name << "\" created.\n\n";
     }
 
     // Pre-login menu
     while (true) {
         std::cout << "\nMain Menu:\n"
                   << " 1) Login\n"
-                  << " 2) Register as User\n"
+                  << " 2) Register\n"
                   << " 3) Exit\n"
                   << "Choice: ";
-        int m; std::cin >> m;
-        if (m == 1) break;
-        if (m == 2) {
+        std::string choice;
+        std::cin >> choice;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        choice = normalize(choice);
+
+        if (choice == "1" || choice == "login") {
+            break;
+        }
+        else if (choice == "2" || choice == "register") {
             std::string id, name, pwd;
-            std::cout << "Choose a user ID: "; std::cin >> id;
+            std::cout << "Choose user ID: "; std::cin >> id;
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << "Your name: "; std::getline(std::cin, name);
             std::cout << "Password: "; std::cin >> pwd;
             auto hash = hashPassword(pwd);
-            User u(id, name, Role::User, hash);
-            userRepoPtr->add(u);
-            std::cout << "✅ Registered! You can now log in.\n";
-            continue;
+            userRepoPtr->add(User{id, name, Role::User, hash});
+            std::cout << "✅ Registered. Please login.\n";
         }
-        if (m == 3) return;
-        std::cout << "Invalid selection\n";
+        else if (choice == "3" || choice == "exit" || choice == "q") {
+            return;
+        }
+        else {
+            std::cout << "Invalid choice, try 1, 2, or 3.\n";
+        }
     }
 
     // Login flow
-    User currentUser("", "", Role::User, "");
+    User currentUser{"", "", Role::User, ""};
     while (true) {
-        std::string uid, pwd;
-        std::cout << "User ID (or 'exit'): "; std::cin >> uid;
-        if (uid == "exit" || uid == "q") return;
-        std::cout << "Password: "; std::cin >> pwd;
+        std::cout << "User ID (or 'quit'): ";
+        std::string uid = normalize(readLine());
+        if (uid == "quit" || uid == "exit" || uid == "q") return;
+        std::cout << "Password: ";
+        std::string pwd = readLine();
 
         if (auto opt = userRepoPtr->find(uid); opt.has_value()) {
             if (!verifyPassword(opt->passwordHash(), pwd)) {
-                std::cout << "❌ Invalid password, try again.\n";
+                std::cout << "❌ Invalid password.\n";
                 continue;
             }
             currentUser = *opt;
             break;
         }
-        std::cout << "❌ User not found. Please register first.\n";
+        std::cout << "❌ User not found.\n";
     }
 
-    // Dispatch to the appropriate menu
-    if (currentUser.role() == Role::Staff) {
-        runStaffMenu(currentUser);
-    } else {
-        runUserMenu(currentUser);
+    // Main role loop
+    while (true) {
+        if (currentUser.role() == Role::Staff) {
+            runStaffMenu(currentUser);
+        } else {
+            runUserMenu(currentUser);
+        }
+
+        // After exiting role menu:
+        std::cout << "\nNext:\n"
+                  << " 1) Login another user\n"
+                  << " 2) Quit\n"
+                  << "Choice: ";
+        std::string next;
+        std::cin >> next;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        next = normalize(next);
+
+        if (next == "2" || next == "quit" || next == "exit" || next == "q") {
+            break;
+        }
+
+        // Re-login
+        while (true) {
+            std::cout << "User ID (or 'quit'): ";
+            std::string uid = normalize(readLine());
+            if (uid == "quit" || uid == "exit" || uid == "q") {
+                saveContext(ctxFile, context);
+                return;
+            }
+            std::cout << "Password: ";
+            std::string pwd = readLine();
+
+            if (auto opt = userRepoPtr->find(uid); opt.has_value()) {
+                if (!verifyPassword(opt->passwordHash(), pwd)) {
+                    std::cout << "❌ Invalid password.\n";
+                    continue;
+                }
+                currentUser = *opt;
+                break;
+            }
+            std::cout << "❌ User not found.\n";
+        }
     }
+
     saveContext(ctxFile, context);
 }
+
+// ---------------- Staff Menu ----------------
+// (unchanged: your existing runStaffMenu implementation)
+
+// ---------------- User Menu ----------------
+// (unchanged: your existing runUserMenu implementation)
 
 // ---------------- Staff Menu ----------------
 
@@ -172,7 +235,7 @@ void CLI::runStaffMenu(const User& u) {
     while (true) {
         std::cout << "\n[Staff] (h=help) > ";
         std::string raw; std::cin >> raw;
-        std::string cmd = normalizeCmd(raw);
+        std::string cmd = normalize(raw);
 
         if      (cmd=="1"||cmd=="a") cmd="add_asset";
         else if (cmd=="2"||cmd=="u") cmd="add_user";
