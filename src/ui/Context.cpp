@@ -2,24 +2,40 @@
 #include <fstream>
 #include <sstream>
 
-Context loadContext(const std::string& path) {
+static constexpr char SEP = '\t';
+
+// Splits “line” at the first SEP into left/right.
+// If no SEP is found, left=line, right="".
+static void split(const std::string& line,
+                  std::string& left,
+                  std::string& right)
+{
+    auto pos = line.find(SEP);
+    if (pos == std::string::npos) {
+        left  = line;
+        right = "";
+    } else {
+        left  = line.substr(0, pos);
+        right = line.substr(pos + 1);
+    }
+}
+
+Context loadContext(const std::string& path)
+{
     Context ctx;
     std::ifstream in(path);
-    if (!in) return ctx;
+    if (!in.is_open()) return ctx;  // missing → defaults
+
     std::string line;
-    while (std::getline(in, line)) {
-        if (line.rfind("lastUser=", 0) == 0) {
-            ctx.lastUser = line.substr(std::string("lastUser=").size());
-        } else if (line.rfind("lastAsset=", 0) == 0) {
-            ctx.lastAsset = line.substr(std::string("lastAsset=").size());
-        }
-    }
+    if (!std::getline(in, line)) return ctx;  // empty → defaults
+
+    split(line, ctx.lastUser, ctx.lastAsset);
     return ctx;
 }
 
-void saveContext(const std::string& path, const Context& ctx) {
+void saveContext(const std::string& path, const Context& ctx)
+{
     std::ofstream out(path, std::ios::trunc);
-    if (!out) return;
-    out << "lastUser=" << ctx.lastUser << "\n";
-    out << "lastAsset=" << ctx.lastAsset << "\n";
+    // Write “user␉asset\n”
+    out << ctx.lastUser << SEP << ctx.lastAsset << '\n';
 }
